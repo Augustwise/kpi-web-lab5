@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Розрахунок прямокутника</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Minimal layout to complement existing link styles in style.css */
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      color: #111;
+      background: #fafafa;
+    }
+    .container {
+      max-width: 720px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #e6e6e6;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
+    }
+    h1 {
+      margin: 0 0 16px 0;
+      font-size: 24px;
+    }
+    p.subtitle {
+      margin: 0 0 24px 0;
+      color: #555;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    label {
+      font-weight: 600;
+    }
+    input[type="text"] {
+      padding: 10px 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+    }
+    input[type="text"]:focus {
+      border-color: #0066cc;
+      box-shadow: 0 0 0 3px rgba(0,102,204,0.15);
+    }
+    .error {
+      color: #b00020;
+      font-size: 13px;
+      min-height: 18px;
+    }
+    .results {
+      margin-top: 24px;
+      padding: 16px;
+      border-radius: 10px;
+      background: #f4f8ff;
+      border: 1px solid #e0ecff;
+    }
+    .results h2 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+    }
+    .results .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed #d9e6ff;
+    }
+    .results .row:last-child { border-bottom: none; }
+    .value {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+    .footer {
+      margin-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <h1>Розрахунок прямокутника</h1>
+    <p class="subtitle">Введіть довжину та ширину. Обчислення відбуваються автоматично під час введення.</p>
+
+    <form id="rect-form" novalidate>
+      <div class="grid">
+        <div class="field">
+          <label for="length">Довжина</label>
+          <input id="length" name="length" type="text" inputmode="decimal" autocomplete="off" placeholder="напр., 10,5 або 10.5" aria-describedby="length-error" />
+          <div id="length-error" class="error" aria-live="polite"></div>
+        </div>
+
+        <div class="field">
+          <label for="width">Ширина</label>
+          <input id="width" name="width" type="text" inputmode="decimal" autocomplete="off" placeholder="напр., 7,25 або 7.25" aria-describedby="width-error" />
+          <div id="width-error" class="error" aria-live="polite"></div>
+        </div>
+      </div>
+    </form>
+
+    <div class="results" aria-live="polite" aria-atomic="true">
+      <h2>Результати</h2>
+
+      <div class="row">
+        <div>
+          <span id="perimeter-mj">\( P = 2\,(a+b) \)</span>
+        </div>
+        <div class="value" id="perimeter">--</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <span id="area-mj">\( S = a,b \)</span>
+        </div>
+        <div class="value" id="area">--</div>
+      </div>
+
+      <div class="row">
+        <div>
+          <span id="diagonal-mj">\( d = \sqrt{a^{2}+b^{2}} \)</span>
+        </div>
+        <div class="value" id="diagonal">--</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <a href="index.html">На головну</a>
+    </div>
+  </div>
+
+  <!-- MathJax v4 per docs: configure then load combined component -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: {'[+]': [['$', '$'], ['\\(', '\\)']]}
+      },
+      svg: { fontCache: 'global' },
+      startup: {
+        pageReady() {
+          // Ensure initial typeset of static placeholders
+          return MathJax.startup.defaultPageReady().then(() => {
+            // Typeset our formula nodes once on load
+            const perNode = document.getElementById('perimeter-mj');
+            const areaNode = document.getElementById('area-mj');
+            const diagNode = document.getElementById('diagonal-mj');
+            return MathJax.typesetPromise([perNode, areaNode, diagNode]);
+          });
+        }
+      }
+    };
+  </script>
+  <!-- Use v4 combined component per /mathjax/mathjax-docs -->
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-svg.js"></script>
+
+  <script>
+    (function () {
+      const el = (id) => document.getElementById(id);
+
+      const lengthInput = el('length');
+      const widthInput = el('width');
+
+      const lengthError = el('length-error');
+      const widthError = el('width-error');
+
+      const perimeterEl = el('perimeter');
+      const areaEl = el('area');
+      const diagonalEl = el('diagonal');
+
+      function parseNumber(value) {
+        if (typeof value !== 'string') return NaN;
+        const trimmed = value.trim();
+        if (!trimmed) return NaN;
+
+        // Accept integers or decimals with dot or comma as separator.
+        // Examples accepted: 10, 10.5, 10,5, .5, 0.5, +3, -2.75
+        // Important: this regex is written directly in HTML, so use single backslashes.
+        if (!/^[-+]?(?:\d+(?:[\.,]\d+)?|[\.,]\d+)$/.test(trimmed)) {
+          return NaN;
+        }
+
+        // Normalize comma to dot for decimal AFTER validation
+        const normalized = trimmed.replace(',', '.');
+
+        const n = Number(normalized);
+        return Number.isFinite(n) ? n : NaN;
+      }
+
+      function formatNumber(n) {
+        if (!Number.isFinite(n)) return '--';
+        // Use UA locale with max 6 decimals; trim trailing zeros
+        const s = n.toLocaleString(undefined, { maximumFractionDigits: 6 });
+        return s;
+      }
+
+      function validatePositive(n) {
+        return Number.isFinite(n) && n > 0;
+      }
+
+      function setError(elm, message) {
+        elm.textContent = message || '';
+      }
+
+      function compute() {
+        const lenRaw = lengthInput.value;
+        const widRaw = widthInput.value;
+
+        const L = parseNumber(lenRaw);
+        const W = parseNumber(widRaw);
+
+        // Validate
+        let lenValid = false;
+        let widValid = false;
+
+        if (lenRaw.trim() === '') {
+          setError(lengthError, 'Введіть довжину');
+        } else if (!Number.isFinite(L)) {
+          setError(lengthError, 'Неправильний формат числа');
+        } else if (!validatePositive(L)) {
+          setError(lengthError, 'Число має бути > 0');
+        } else {
+          setError(lengthError, '');
+          lenValid = true;
+        }
+
+        if (widRaw.trim() === '') {
+          setError(widthError, 'Введіть ширину');
+        } else if (!Number.isFinite(W)) {
+          setError(widthError, 'Неправильний формат числа');
+        } else if (!validatePositive(W)) {
+          setError(widthError, 'Число має бути > 0');
+        } else {
+          setError(widthError, '');
+          widValid = true;
+        }
+
+        if (lenValid && widValid) {
+          const P = 2 * (L + W);
+          const S = L * W;
+          const D = Math.hypot(L, W); // √(L² + W²)
+
+          // Plain numeric outputs
+          perimeterEl.textContent = formatNumber(P);
+          areaEl.textContent = formatNumber(S);
+          diagonalEl.textContent = formatNumber(D);
+
+          // MathJax formulas with substituted numbers (TeX)
+          // Build TeX using escaped numbers so MathJax parses dots, plus/minus correctly
+          const num = (x) => String(x).replace(/\\/g,'').replace(/([{}_])/g,'\\$1');
+          const perExpr = `\\( P = 2\\,(a+b) = 2\\,(${num(L)}+${num(W)}) = ${num(P)} \\)`;
+          // Use multiplication sign × between numbers
+          const areaExpr = `\\( S = a\\,b = ${num(L)}\\times${num(W)} = ${num(S)} \\)`;
+          const diagExpr = `\\( d = \\sqrt{a^{2}+b^{2}} = \\sqrt{${num(L)}^{2}+${num(W)}^{2}} = ${num(D)} \\)`;
+
+          const perNode = document.getElementById('perimeter-mj');
+          const areaNode = document.getElementById('area-mj');
+          const diagNode = document.getElementById('diagonal-mj');
+
+          // Use innerHTML so inline-math delimiters are preserved
+          perNode.innerHTML = perExpr;
+          areaNode.innerHTML = areaExpr;
+          diagNode.innerHTML = diagExpr;
+
+          if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise([perNode, areaNode, diagNode]).catch((err)=>console.error('MathJax typeset error:', err));
+          }
+        } else {
+          perimeterEl.textContent = '--';
+          areaEl.textContent = '--';
+          diagonalEl.textContent = '--';
+ 
+          document.getElementById('perimeter-mj').innerHTML = '\\( P = 2\\,(a+b) \\)';
+          document.getElementById('area-mj').innerHTML = '\\( S = a\\,b \\)';
+          document.getElementById('diagonal-mj').innerHTML = '\\( d = \\sqrt{a^{2}+b^{2}} \\)';
+
+          if (window.MathJax && MathJax.typesetPromise) {
+            MathJax.typesetPromise([
+              document.getElementById('perimeter-mj'),
+              document.getElementById('area-mj'),
+              document.getElementById('diagonal-mj')
+            ]);
+          }
+        }
+      }
+
+      // Live updates on input
+      lengthInput.addEventListener('input', compute);
+      widthInput.addEventListener('input', compute);
+
+      // Compute once on load (in case of prefilled values or browser autofill)
+      window.addEventListener('DOMContentLoaded', compute);
+
+      // Re-typeset after fonts ready if MathJax finished loading later
+      document.addEventListener('readystatechange', () => {
+        if (window.MathJax && MathJax.typesetPromise) {
+          const perNode = document.getElementById('perimeter-mj');
+          const areaNode = document.getElementById('area-mj');
+          const diagNode = document.getElementById('diagonal-mj');
+          MathJax.typesetPromise([perNode, areaNode, diagNode]).catch(()=>{});
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

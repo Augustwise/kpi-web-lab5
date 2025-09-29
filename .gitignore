@@ -21,6 +21,7 @@ build/
 *.swp
 *.swo
 *~
+.kilocode
 
 # OS generated files
 .DS_Store
