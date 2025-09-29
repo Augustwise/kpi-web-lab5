@@ -1,0 +1,19 @@
+{
+  "name": "kpi-web-lab5",
+  "version": "1.0.0",
+  "description": "Laboratory work for the \"Web\" course at Igor Sikorsky Kyiv Polytechnic Institute",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["web", "vite", "html", "css", "javascript", "kpi"],
+  "author": "KPI Student",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^7.1.7"
+  }
+}
