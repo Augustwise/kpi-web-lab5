@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f5f7fa;
+      --white:#ffffff;
+      --bubble-left:#eaf4ff;
+      --bubble-right:#eefbf3;
+      --yellow:#ffd400;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --shadow:0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    *{ box-sizing: border-box; }
+    body{
+      margin:0;
+      font-family: "Exo 2", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container{
+      max-width: 1300px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 260px 1fr 260px;
+      gap: 24px;
+    }
+
+    .panel{
+      background: var(--white);
+      border-radius: 4px;
+      padding: 16px;
+    }
+
+    .panel h3{
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .row{
+      display: flex;
+      gap: 8px;
+    }
+
+    .panel input[type="text"]{
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      outline: none;
+      background: var(--white);
+      font-family: "Exo 2", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .panel button{
+      padding: 10px 12px;
+      background: var(--yellow);
+      color: #111827;
+      font-weight: 700;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: "Exo 2", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+    .panel button:active{ transform: translateY(1px); }
+
+    .chat{
+      background: var(--white);
+      border-radius: 4px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      min-height: 420px;
+      height: 70vh;
+    }
+
+    .messages{
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message{
+      display: flex;
+    }
+    .message.user1{ justify-content: flex-start; }
+    .message.user2{ justify-content: flex-end; }
+
+    .bubble{
+      max-width: 70%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--bubble-left);
+      line-height: 1.35;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .bubble.user2{ background: var(--bubble-right); }
+
+    .meta{
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--muted);
+      text-align: right;
+      margin-bottom: 4px;
+    }
+
+    .empty{
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    @keyframes messageAppear {
+      0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .message {
+      animation: messageAppear 0.3s ease-out;
+    }
+
+    /* Адаптив */
+    @media (max-width: 900px){
+      .container{
+        grid-template-columns: 1fr;
+      }
+      .panel{ order: 2; }
+      .panel.right{ order: 3; }
+      .chat{ order: 1; height: 60vh; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Панель user 1 -->
+    <div class="panel left">
+      <h3>Повідомлення user 1</h3>
+      <div class="row">
+        <input id="input1" type="text" placeholder="Введіть текст" />
+      </div>
+      <div style="height:8px"></div>
+      <button id="send1">Відправити</button>
+    </div>
+
+    <!-- Центральна область чату -->
+    <div class="chat">
+      <div id="messages" class="messages">
+        <div id="empty" class="empty">Тут будуть з’являтися повідомлення</div>
+      </div>
+    </div>
+
+    <!-- Панель user 2 -->
+    <div class="panel right">
+      <h3>Повідомлення user 2</h3>
+      <div class="row">
+        <input id="input2" type="text" placeholder="Введіть текст" />
+      </div>
+      <div style="height:8px"></div>
+      <button id="send2">Відправити</button>
+    </div>
+  </div>
+
+  <script>
+    function addMessage(user, text){
+      const messages = document.getElementById('messages');
+      const empty = document.getElementById('empty');
+      if (empty) empty.remove();
+
+      // контейнер рядка
+      const wrap = document.createElement('div');
+      wrap.className = 'message user' + user;
+
+      // бульбашка
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble user' + user;
+
+      // підпис USER 1/2
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      meta.textContent = 'USER ' + user;
+
+      // сам текст
+      const body = document.createElement('div');
+      body.className = 'body';
+      body.textContent = text;
+
+      // складуємо
+      bubble.appendChild(meta);
+      bubble.appendChild(body);
+      wrap.appendChild(bubble);
+      messages.appendChild(wrap);
+
+      // Автопрокрутка до останнього повідомлення
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Відправка для вибраного користувача
+    function send(user){
+      const input = document.getElementById('input' + user);
+      const text = input.value.trim();
+      if (!text) return; // нічого не робимо, якщо пусто
+
+      addMessage(user, text);
+      input.value = '';   // очищаємо поле
+      input.focus();      // ставимо курсор назад
+    }
+
+    document.getElementById('send1').addEventListener('click', function(){ send(1); });
+    document.getElementById('send2').addEventListener('click', function(){ send(2); });
+
+    // Надсилання по Enter
+    document.getElementById('input1').addEventListener('keydown', function(e){
+      if (e.key === 'Enter') send(1);
+    });
+    document.getElementById('input2').addEventListener('keydown', function(e){
+      if (e.key === 'Enter') send(2);
+    });
+  </script>
+</body>
+</html>
