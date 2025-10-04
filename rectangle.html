@@ -15,13 +15,11 @@
       background: #fafafa;
     }
     .container {
-      max-width: 720px;
       margin: 0 auto;
       background: #fff;
       border: 1px solid #e6e6e6;
       border-radius: 12px;
       padding: 24px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.04);
     }
     h1 {
       margin: 0 0 16px 0;
@@ -119,21 +117,18 @@
         <div>
           <span id="perimeter-mj">\( P = 2\,(a+b) \)</span>
         </div>
-        <div class="value" id="perimeter">--</div>
       </div>
 
       <div class="row">
         <div>
           <span id="area-mj">\( S = a,b \)</span>
         </div>
-        <div class="value" id="area">--</div>
       </div>
 
       <div class="row">
         <div>
           <span id="diagonal-mj">\( d = \sqrt{a^{2}+b^{2}} \)</span>
         </div>
-        <div class="value" id="diagonal">--</div>
       </div>
     </div>
 
@@ -142,7 +137,6 @@
     </div>
   </div>
 
-  <!-- MathJax v4 per docs: configure then load combined component -->
   <script>
     window.MathJax = {
       tex: {
@@ -163,155 +157,101 @@
       }
     };
   </script>
-  <!-- Use v4 combined component per /mathjax/mathjax-docs -->
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-svg.js"></script>
 
   <script>
-    (function () {
-      const el = (id) => document.getElementById(id);
+    (() => {
+      const byId = (id) => document.getElementById(id);
 
-      const lengthInput = el('length');
-      const widthInput = el('width');
+      // Inputs and error containers
+      const lengthInput = byId('length');
+      const widthInput  = byId('width');
+      const lengthError = byId('length-error');
+      const widthError  = byId('width-error');
 
-      const lengthError = el('length-error');
-      const widthError = el('width-error');
+      // Result nodes
+      const perNode  = byId('perimeter-mj');
+      const areaNode = byId('area-mj');
+      const diagNode = byId('diagonal-mj');
 
-      const perimeterEl = el('perimeter');
-      const areaEl = el('area');
-      const diagonalEl = el('diagonal');
+      const PLACEHOLDERS = {
+        per: '\\( P = 2\\,(a+b) \\)',
+        area: '\\( S = a\\,b \\)',
+        diag: '\\( d = \\sqrt{a^{2}+b^{2}} \\)'
+      };
 
-      function parseNumber(value) {
-        if (typeof value !== 'string') return NaN;
-        const trimmed = value.trim();
-        if (!trimmed) return NaN;
-
-        // Accept integers or decimals with dot or comma as separator.
-        // Examples accepted: 10, 10.5, 10,5, .5, 0.5, +3, -2.75
-        // Important: this regex is written directly in HTML, so use single backslashes.
-        if (!/^[-+]?(?:\d+(?:[\.,]\d+)?|[\.,]\d+)$/.test(trimmed)) {
-          return NaN;
-        }
-
-        // Normalize comma to dot for decimal AFTER validation
-        const normalized = trimmed.replace(',', '.');
-
-        const n = Number(normalized);
+      // Parse number from text, allowing comma or dot as decimal separator
+      function toNumber(text) {
+        const normalized = String(text || '').trim().replace(',', '.');
+        if (normalized === '') return NaN;
+        const valid = /^[-+]?(?:\d+(?:\.\d+)?|\.\d+)$/.test(normalized);
+        if (!valid) return NaN;
+        const n = parseFloat(normalized);
         return Number.isFinite(n) ? n : NaN;
       }
 
-      function formatNumber(n) {
-        if (!Number.isFinite(n)) return '--';
-        // Use UA locale with max 6 decimals; trim trailing zeros
-        const s = n.toLocaleString(undefined, { maximumFractionDigits: 6 });
-        return s;
+      function showError(node, message) {
+        node.textContent = message || '';
       }
 
-      function validatePositive(n) {
-        return Number.isFinite(n) && n > 0;
-      }
-
-      function setError(elm, message) {
-        elm.textContent = message || '';
-      }
-
-      function compute() {
-        const lenRaw = lengthInput.value;
-        const widRaw = widthInput.value;
-
-        const L = parseNumber(lenRaw);
-        const W = parseNumber(widRaw);
-
-        // Validate
-        let lenValid = false;
-        let widValid = false;
-
-        if (lenRaw.trim() === '') {
-          setError(lengthError, 'Введіть довжину');
-        } else if (!Number.isFinite(L)) {
-          setError(lengthError, 'Неправильний формат числа');
-        } else if (!validatePositive(L)) {
-          setError(lengthError, 'Число має бути > 0');
-        } else {
-          setError(lengthError, '');
-          lenValid = true;
+      function validateField(input, errorNode, emptyMsg) {
+        const raw = input.value;
+        const value = toNumber(raw);
+        if (raw.trim() === '') {
+          showError(errorNode, emptyMsg);
+          return null;
         }
-
-        if (widRaw.trim() === '') {
-          setError(widthError, 'Введіть ширину');
-        } else if (!Number.isFinite(W)) {
-          setError(widthError, 'Неправильний формат числа');
-        } else if (!validatePositive(W)) {
-          setError(widthError, 'Число має бути > 0');
-        } else {
-          setError(widthError, '');
-          widValid = true;
+        if (!Number.isFinite(value)) {
+          showError(errorNode, 'Неправильний формат числа');
+          return null;
         }
+        if (value <= 0) {
+          showError(errorNode, 'Число має бути > 0');
+          return null;
+        }
+        showError(errorNode, '');
+        return value;
+      }
 
-        if (lenValid && widValid) {
-          const P = 2 * (L + W);
-          const S = L * W;
-          const D = Math.hypot(L, W); // √(L² + W²)
+      function renderPlaceholders() {
+        perNode.innerHTML  = PLACEHOLDERS.per;
+        areaNode.innerHTML = PLACEHOLDERS.area;
+        diagNode.innerHTML = PLACEHOLDERS.diag;
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([perNode, areaNode, diagNode]);
+        }
+      }
 
-          // Plain numeric outputs
-          perimeterEl.textContent = formatNumber(P);
-          areaEl.textContent = formatNumber(S);
-          diagonalEl.textContent = formatNumber(D);
+      function renderResults(length, width) {
+        const perimeter = 2 * (length + width);
+        const area = length * width;
+        const diagonal = Math.hypot(length, width);
 
-          // MathJax formulas with substituted numbers (TeX)
-          // Build TeX using escaped numbers so MathJax parses dots, plus/minus correctly
-          const num = (x) => String(x).replace(/\\/g,'').replace(/([{}_])/g,'\\$1');
-          const perExpr = `\\( P = 2\\,(a+b) = 2\\,(${num(L)}+${num(W)}) = ${num(P)} \\)`;
-          // Use multiplication sign × between numbers
-          const areaExpr = `\\( S = a\\,b = ${num(L)}\\times${num(W)} = ${num(S)} \\)`;
-          const diagExpr = `\\( d = \\sqrt{a^{2}+b^{2}} = \\sqrt{${num(L)}^{2}+${num(W)}^{2}} = ${num(D)} \\)`;
+        perNode.innerHTML  = `\\( P = 2\\,(a+b) = 2\\,(${length}+${width}) = ${perimeter} \\)`;
+        areaNode.innerHTML = `\\( S = a\\,b = ${length}\\times${width} = ${area} \\)`;
+        diagNode.innerHTML = `\\( d = \\sqrt{a^{2}+b^{2}} = \\sqrt{${length}^{2}+${width}^{2}} = ${diagonal} \\)`;
 
-          const perNode = document.getElementById('perimeter-mj');
-          const areaNode = document.getElementById('area-mj');
-          const diagNode = document.getElementById('diagonal-mj');
+        if (window.MathJax && MathJax.typesetPromise) {
+          MathJax.typesetPromise([perNode, areaNode, diagNode]).catch(err =>
+            console.error('MathJax typeset error:', err)
+          );
+        }
+      }
 
-          // Use innerHTML so inline-math delimiters are preserved
-          perNode.innerHTML = perExpr;
-          areaNode.innerHTML = areaExpr;
-          diagNode.innerHTML = diagExpr;
+      function onInput() {
+        const length = validateField(lengthInput, lengthError, 'Введіть довжину');
+        const width  = validateField(widthInput,  widthError,  'Введіть ширину');
 
-          if (window.MathJax && MathJax.typesetPromise) {
-            MathJax.typesetPromise([perNode, areaNode, diagNode]).catch((err)=>console.error('MathJax typeset error:', err));
-          }
+        if (length != null && width != null) {
+          renderResults(length, width);
         } else {
-          perimeterEl.textContent = '--';
-          areaEl.textContent = '--';
-          diagonalEl.textContent = '--';
- 
-          document.getElementById('perimeter-mj').innerHTML = '\\( P = 2\\,(a+b) \\)';
-          document.getElementById('area-mj').innerHTML = '\\( S = a\\,b \\)';
-          document.getElementById('diagonal-mj').innerHTML = '\\( d = \\sqrt{a^{2}+b^{2}} \\)';
-
-          if (window.MathJax && MathJax.typesetPromise) {
-            MathJax.typesetPromise([
-              document.getElementById('perimeter-mj'),
-              document.getElementById('area-mj'),
-              document.getElementById('diagonal-mj')
-            ]);
-          }
+          renderPlaceholders();
         }
       }
 
       // Live updates on input
-      lengthInput.addEventListener('input', compute);
-      widthInput.addEventListener('input', compute);
-
-      // Compute once on load (in case of prefilled values or browser autofill)
-      window.addEventListener('DOMContentLoaded', compute);
-
-      // Re-typeset after fonts ready if MathJax finished loading later
-      document.addEventListener('readystatechange', () => {
-        if (window.MathJax && MathJax.typesetPromise) {
-          const perNode = document.getElementById('perimeter-mj');
-          const areaNode = document.getElementById('area-mj');
-          const diagNode = document.getElementById('diagonal-mj');
-          MathJax.typesetPromise([perNode, areaNode, diagNode]).catch(()=>{});
-        }
-      });
+      lengthInput.addEventListener('input', onInput);
+      widthInput.addEventListener('input', onInput);
     })();
   </script>
 </body>
