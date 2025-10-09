@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Розрахунок прямокутника</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
   <style>
-    /* Minimal layout to complement existing link styles in style.css */
     body {
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      font-family: "Exo 2", sans-serif;
       margin: 0;
       padding: 24px;
       color: #111;
@@ -117,7 +119,7 @@
 
       <div class="row">
         <div>
-          <span id="area-mj">\( S = a,b \)</span>
+          <span id="area-mj">\( S = ab \)</span>
         </div>
       </div>
 
@@ -141,9 +143,7 @@
       svg: { fontCache: 'global' },
       startup: {
         pageReady() {
-          // Ensure initial typeset of static placeholders
           return MathJax.startup.defaultPageReady().then(() => {
-            // Typeset our formula nodes once on load
             const perNode = document.getElementById('perimeter-mj');
             const areaNode = document.getElementById('area-mj');
             const diagNode = document.getElementById('diagonal-mj');
@@ -159,13 +159,11 @@
     (() => {
       const byId = (id) => document.getElementById(id);
 
-      // Inputs and error containers
       const lengthInput = byId('length');
       const widthInput  = byId('width');
       const lengthError = byId('length-error');
       const widthError  = byId('width-error');
 
-      // Result nodes
       const perNode  = byId('perimeter-mj');
       const areaNode = byId('area-mj');
       const diagNode = byId('diagonal-mj');
@@ -245,7 +243,6 @@
         }
       }
 
-      // Live updates on input
       lengthInput.addEventListener('input', onInput);
       widthInput.addEventListener('input', onInput);
     })();
