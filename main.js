@@ -1,6 +1,4 @@
-// Simple Ukrainian -> Latin transliteration (2010 rules, simplified)
 (function () {
-  // Mapping for general letters (non word-start cases)
   const map = {
     'а': 'a', 'б': 'b', 'в': 'v', 'г': 'h', 'ґ': 'g',
     'д': 'd', 'е': 'e', 'є': 'ie', 'ж': 'zh', 'з': 'z',
@@ -11,7 +9,7 @@
     'ь': '', 'ю': 'iu', 'я': 'ia', '’': '', "'": ''
   };
 
-  // Mappings for letters at the beginning of a word
+  // letters at the beginning of a word
   const startMap = {
     'є': 'ye', 'ю': 'yu', 'я': 'ya', 'ї': 'yi', 'й': 'y'
   };
@@ -34,11 +32,10 @@
       const ch = text[i];
       const lower = ch.toLowerCase();
 
-      // Handle special "зг" at word start -> "zgh" (optional rule)
       if (isWordStart(text, i) && lower === 'з' && (text[i + 1] || '').toLowerCase() === 'г') {
         const out = 'zgh';
         result += (ch === ch.toUpperCase()) ? capitalizeLatin(out) : out;
-        i += 1; // skip next char 'г'
+        i += 1;
         continue;
       }
 
@@ -52,7 +49,6 @@
         out = ch; // characters like spaces, punctuation, latin letters, numbers
       }
 
-      // Preserve capitalization for single Ukrainian letters
       if (ch !== lower && ch === ch.toUpperCase()) {
         out = capitalizeLatin(out);
       }
@@ -62,7 +58,6 @@
     return result;
   }
 
-  // Hook up UI on the transliteration page
   document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('ukr');
     const output = document.getElementById('latin');
@@ -73,6 +68,6 @@
     }
 
     input.addEventListener('input', update);
-    update(); // initial fill
+    update();
   });
 })();

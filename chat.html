@@ -142,7 +142,6 @@
       animation: messageAppear 0.3s ease-out;
     }
 
-    /* Адаптив */
     @media (max-width: 900px){
       .container{
         grid-template-columns: 1fr;
@@ -190,25 +189,20 @@
       const empty = document.getElementById('empty');
       if (empty) empty.remove();
 
-      // контейнер рядка
       const wrap = document.createElement('div');
       wrap.className = 'message user' + user;
 
-      // бульбашка
       const bubble = document.createElement('div');
       bubble.className = 'bubble user' + user;
 
-      // підпис USER 1/2
       const meta = document.createElement('div');
       meta.className = 'meta';
       meta.textContent = 'USER ' + user;
 
-      // сам текст
       const body = document.createElement('div');
       body.className = 'body';
       body.textContent = text;
 
-      // складуємо
       bubble.appendChild(meta);
       bubble.appendChild(body);
       wrap.appendChild(bubble);
@@ -222,17 +216,16 @@
     function send(user){
       const input = document.getElementById('input' + user);
       const text = input.value.trim();
-      if (!text) return; // нічого не робимо, якщо пусто
+      if (!text) return;
 
       addMessage(user, text);
-      input.value = '';   // очищаємо поле
-      input.focus();      // ставимо курсор назад
+      input.value = '';
+      input.focus();
     }
 
     document.getElementById('send1').addEventListener('click', function(){ send(1); });
     document.getElementById('send2').addEventListener('click', function(){ send(2); });
 
-    // Надсилання по Enter
     document.getElementById('input1').addEventListener('keydown', function(e){
       if (e.key === 'Enter') send(1);
     });
